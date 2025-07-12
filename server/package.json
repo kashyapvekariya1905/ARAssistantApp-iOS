@@ -1,0 +1,30 @@
+{
+  "name": "ar-remote-assistance-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for AR Remote Assistance iOS app",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "websocket",
+    "ar",
+    "augmented-reality",
+    "remote-assistance",
+    "ios",
+    "arkit",
+    "streaming",
+    "drawing",
+    "realtime"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
