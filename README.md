@@ -1,9 +1,11 @@
 To run the code:
 
 start server commands
-   - cd server
-   - npm i
-   - npm start
+```
+cd server
+npm i
+npm start
+```
 
 
 now, to run the swift app in your mac device:
