@@ -1,136 +1,218 @@
-const express = require('express');
+// ARapp2
 const WebSocket = require('ws');
 const http = require('http');
 
-const app = express();
-const server = http.createServer(app);
+const server = http.createServer();
 const wss = new WebSocket.Server({ server });
-const clients = {
-    users: new Set(),
-    aids: new Set()
-};
 
-const drawingHistory = [];
-const MAX_DRAWING_HISTORY = 100;
+const clients = new Map();
+
+class Client {
+    constructor(ws, role, id) {
+        this.ws = ws;
+        this.role = role;
+        this.id = id;
+        this.isAlive = true;
+        this.audioActive = false;
+    }
+
+    send(data) {
+        if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(data, { binary: true });
+        }
+    }
+
+    sendJSON(obj) {
+        this.send(JSON.stringify(obj));
+    }
+}
+
+function heartbeat() {
+    this.isAlive = true;
+}
+
 wss.on('connection', (ws) => {
-    console.log('New client connected');
+    console.log('New connection established');
     
-    let clientType = null;
-    let clientId = null;
+    ws.isAlive = true;
+    ws.on('pong', heartbeat);
+    
+    let client = null;
 
     ws.on('message', (message) => {
         try {
-            if (message.toString().startsWith('{')) {
-                const data = JSON.parse(message);
+            if (message instanceof Buffer && message.length > 6) {
+                const prefix = message.slice(0, 6).toString();
                 
-                switch (data.type) {
-                    case 'register':
-                        clientType = data.role;
-                        clientId = data.id;
-                        
-                        if (clientType === 'user') {
-                            clients.users.add(ws);
-                            console.log(`User registered: ${clientId}`);
-                            if (drawingHistory.length > 0) {
-                                ws.send(JSON.stringify({
-                                    type: 'drawing_history',
-                                    drawings: drawingHistory
-                                }));
-                            }
-                        } else if (clientType === 'aid') {
-                            clients.aids.add(ws);
-                            console.log(`Aid registered: ${clientId}`);
-                        }
-                        
-                        ws.send(JSON.stringify({ 
-                            type: 'registered', 
-                            role: clientType,
-                            connectedUsers: clients.users.size,
-                            connectedAids: clients.aids.size
-                        }));
-                        break;
-                        
-                    case 'drawing':
-                        if (clients.aids.has(ws)) {
-                            const drawingMessage = JSON.stringify(data);
-                            if (data.action === 'add') {
-                                drawingHistory.push(data);
-                                if (drawingHistory.length > MAX_DRAWING_HISTORY) {
-                                    drawingHistory.shift();
-                                }
-                            }
-                            
-                            clients.users.forEach((userWs) => {
-                                if (userWs.readyState === WebSocket.OPEN) {
-                                    userWs.send(drawingMessage);
-                                }
-                            });
-                            
-                            console.log(`Drawing action: ${data.action}, ID: ${data.drawingId}`);
-                        }
-                        break;
-                        
-                    case 'clear_drawings':
-                        drawingHistory.length = 0;
-                        const clearMessage = JSON.stringify({ type: 'clear_drawings' });
-                        
-                        [...clients.users, ...clients.aids].forEach((client) => {
-                            if (client.readyState === WebSocket.OPEN) {
-                                client.send(clearMessage);
-                            }
-                        });
-                        
-                        console.log('Drawings cleared');
-                        break;
+                if (prefix === 'AUDIO:') {
+                    handleAudioData(client, message.slice(6));
+                    return;
                 }
-            } else {
-                if (clients.users.has(ws)) {
-                    clients.aids.forEach((aidWs) => {
-                        if (aidWs.readyState === WebSocket.OPEN) {
-                            aidWs.send(message);
-                        }
-                    });
+                
+                if (isImageData(message)) {
+                    handleImageData(client, message);
+                    return;
                 }
             }
-        } catch (error) {
-            console.error('Error processing message:', error);
+
+            const data = JSON.parse(message);
+            
+            switch (data.type) {
+                case 'register':
+                    client = new Client(ws, data.role, data.id);
+                    clients.set(ws, client);
+                    
+                    client.sendJSON({
+                        type: 'registered',
+                        role: data.role,
+                        id: data.id
+                    });
+                    
+                    broadcastStatus();
+                    console.log(`Client registered as ${data.role} with ID: ${data.id}`);
+                    break;
+
+                case 'drawing':
+                    handleDrawingMessage(client, data);
+                    break;
+
+                case 'clear_drawings':
+                    broadcastToRole('user', message);
+                    console.log('Clear drawings command sent');
+                    break;
+
+                case 'audio_command':
+                    handleAudioCommand(client, data);
+                    break;
+
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        } catch (err) {
+            console.error('Error processing message:', err);
         }
     });
 
     ws.on('close', () => {
-        console.log('Client disconnected');
-        clients.users.delete(ws);
-        clients.aids.delete(ws);
-
-        const statusUpdate = JSON.stringify({
-            type: 'status',
-            connectedUsers: clients.users.size,
-            connectedAids: clients.aids.size
-        });
-        
-        [...clients.users, ...clients.aids].forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(statusUpdate);
-            }
-        });
+        console.log('Connection closed');
+        if (client) {
+            clients.delete(ws);
+            broadcastStatus();
+        }
     });
 
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+    ws.on('error', (err) => {
+        console.error('WebSocket error:', err);
     });
 });
 
-app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok',
-        connectedUsers: clients.users.size,
-        connectedAids: clients.aids.size,
-        drawingHistorySize: drawingHistory.length
+function handleAudioData(sender, audioData) {
+    if (!sender || !sender.audioActive) return;
+    
+    const targetRole = sender.role === 'user' ? 'aid' : 'user';
+    
+    const audioMessage = Buffer.concat([
+        Buffer.from('AUDIO:'),
+        audioData
+    ]);
+    
+    clients.forEach((client) => {
+        if (client.role === targetRole && client.audioActive) {
+            client.send(audioMessage);
+        }
     });
+}
+
+function handleAudioCommand(sender, data) {
+    if (!sender) return;
+    
+    switch (data.command) {
+        case 'audio_start':
+            sender.audioActive = true;
+            const targetRole = sender.role === 'user' ? 'aid' : 'user';
+            
+            broadcastToRole(targetRole, JSON.stringify({
+                type: 'audio_command',
+                command: 'audio_start'
+            }));
+            
+            console.log(`Audio started by ${sender.role}`);
+            break;
+            
+        case 'audio_end':
+            sender.audioActive = false;
+            const endTargetRole = sender.role === 'user' ? 'aid' : 'user';
+            
+            broadcastToRole(endTargetRole, JSON.stringify({
+                type: 'audio_command',
+                command: 'audio_end'
+            }));
+            
+            console.log(`Audio ended by ${sender.role}`);
+            break;
+    }
+}
+
+function handleImageData(sender, imageData) {
+    if (!sender || sender.role !== 'user') return;
+    
+    broadcastToRole('aid', imageData);
+}
+
+function handleDrawingMessage(sender, data) {
+    if (!sender || sender.role !== 'aid') return;
+    
+    broadcastToRole('user', JSON.stringify(data));
+    console.log(`Drawing ${data.action} for ID: ${data.drawingId}`);
+}
+
+function isImageData(data) {
+    if (data.length < 4) return false;
+    
+    const jpegHeader = data[0] === 0xFF && data[1] === 0xD8;
+    const pngHeader = data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47;
+    
+    return jpegHeader || pngHeader;
+}
+
+function broadcastToRole(role, data) {
+    clients.forEach((client) => {
+        if (client.role === role) {
+            client.send(data);
+        }
+    });
+}
+
+function broadcastStatus() {
+    const status = {
+        type: 'status',
+        connectedUsers: Array.from(clients.values()).filter(c => c.role === 'user').length,
+        connectedAids: Array.from(clients.values()).filter(c => c.role === 'aid').length
+    };
+    
+    clients.forEach((client) => {
+        client.sendJSON(status);
+    });
+}
+
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) {
+            console.log('Terminating inactive connection');
+            return ws.terminate();
+        }
+        
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
+
+wss.on('close', () => {
+    clearInterval(interval);
 });
 
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
-server.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`WebSocket server is running on port ${PORT}`);
+    console.log(`Connect via ws://YOUR_IP_ADDRESS:${PORT}`);
 });
