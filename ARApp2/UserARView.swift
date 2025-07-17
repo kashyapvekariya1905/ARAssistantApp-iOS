@@ -1,3 +1,4 @@
+
 import SwiftUI
 import ARKit
 
@@ -5,17 +6,16 @@ struct UserARView: View {
     @StateObject private var socketManager = SocketManager.shared
     @StateObject private var streamManager = CameraStreamManager()
     @StateObject private var drawingManager = DrawingManager()
+    @StateObject private var audioManager = AudioManager.shared
+    @StateObject private var audioSocketHandler = AudioSocketHandler.shared
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
-            // AR View
             ARViewContainer(streamManager: streamManager, drawingManager: drawingManager)
                 .edgesIgnoringSafeArea(.all)
             
-            // UI Overlay
             VStack {
-                // Top bar
                 HStack {
                     Button(action: {
                         disconnect()
@@ -40,6 +40,11 @@ struct UserARView: View {
                                 .font(.caption)
                                 .foregroundColor(.green)
                         }
+                        if audioManager.isCallActive {
+                            Label("Call Active", systemImage: "phone.fill")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))
@@ -50,24 +55,32 @@ struct UserARView: View {
                 
                 Spacer()
                 
-                // Bottom controls
-                HStack {
-                    if !socketManager.isConnected {
-                        Button("Connect") {
-                            socketManager.connect(as: "user")
-                            setupDrawingReceiver()
+                VStack(spacing: 16) {
+                    if audioManager.isCallActive {
+                        CallControlsView()
+                    }
+                    
+                    HStack {
+                        if !socketManager.isConnected {
+                            Button("Connect") {
+                                socketManager.connect(as: "user")
+                                setupDrawingReceiver()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                    audioSocketHandler.startAudioCall()
+                                }
+                            }
+                            .buttonStyle(StreamButtonStyle())
+                        } else if !streamManager.isStreaming {
+                            Button("Start Streaming") {
+                                streamManager.isStreaming = true
+                            }
+                            .buttonStyle(StreamButtonStyle(color: .green))
+                        } else {
+                            Button("Stop Streaming") {
+                                streamManager.stopStreaming()
+                            }
+                            .buttonStyle(StreamButtonStyle(color: .red))
                         }
-                        .buttonStyle(StreamButtonStyle())
-                    } else if !streamManager.isStreaming {
-                        Button("Start Streaming") {
-                            streamManager.isStreaming = true
-                        }
-                        .buttonStyle(StreamButtonStyle(color: .green))
-                    } else {
-                        Button("Stop Streaming") {
-                            streamManager.stopStreaming()
-                        }
-                        .buttonStyle(StreamButtonStyle(color: .red))
                     }
                 }
                 .padding()
@@ -77,6 +90,7 @@ struct UserARView: View {
         .onAppear {
             if socketManager.isConnected {
                 setupDrawingReceiver()
+                audioSocketHandler.startAudioCall()
             }
         }
         .onDisappear {
@@ -90,8 +104,7 @@ struct UserARView: View {
             
             switch message.action {
             case .add:
-                if let stroke = message.stroke {
-                    // Use the center point of the stroke for anchor placement
+                if let stroke = message.stroke, !stroke.points.isEmpty {
                     let centerX = stroke.points.map { $0.x }.reduce(0, +) / Float(stroke.points.count)
                     let centerY = stroke.points.map { $0.y }.reduce(0, +) / Float(stroke.points.count)
                     let centerPoint = CGPoint(x: CGFloat(centerX), y: CGFloat(centerY))
@@ -102,7 +115,7 @@ struct UserARView: View {
                 }
                 
             case .update:
-                if let stroke = message.stroke {
+                if let stroke = message.stroke, !stroke.points.isEmpty {
                     let centerX = stroke.points.map { $0.x }.reduce(0, +) / Float(stroke.points.count)
                     let centerY = stroke.points.map { $0.y }.reduce(0, +) / Float(stroke.points.count)
                     let centerPoint = CGPoint(x: CGFloat(centerX), y: CGFloat(centerY))
@@ -123,6 +136,7 @@ struct UserARView: View {
     }
     
     private func disconnect() {
+        audioSocketHandler.endAudioCall()
         streamManager.stopStreaming()
         socketManager.disconnect()
         drawingManager.clearAllDrawings()
@@ -137,16 +151,13 @@ struct ARViewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> ARSCNView {
         let arView = ARSCNView()
         
-        // Configure AR session
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
         arView.session.run(configuration)
         
-        // Enable default lighting
         arView.autoenablesDefaultLighting = true
         arView.automaticallyUpdatesLighting = true
         
-        // Configure drawing manager
         drawingManager.configure(with: arView)
         
         arView.delegate = context.coordinator
@@ -155,7 +166,6 @@ struct ARViewContainer: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: ARSCNView, context: Context) {
-        // Update handled by coordinator
     }
     
     func makeCoordinator() -> Coordinator {
@@ -173,7 +183,6 @@ struct ARViewContainer: UIViewRepresentable {
         }
         
         func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
-            // Handle streaming
             if streamManager.isStreaming && !hasStartedStreaming,
                let arView = renderer as? ARSCNView {
                 hasStartedStreaming = true
@@ -183,11 +192,9 @@ struct ARViewContainer: UIViewRepresentable {
             }
         }
         
-        // Optional: Add plane detection visualization
         func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
             guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
             
-            // Create a subtle plane visualization
             let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x),
                                 height: CGFloat(planeAnchor.extent.z))
             plane.firstMaterial?.diffuse.contents = UIColor.white.withAlphaComponent(0.1)
@@ -223,6 +230,8 @@ struct StreamButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }
 }
+
+
 
 
 

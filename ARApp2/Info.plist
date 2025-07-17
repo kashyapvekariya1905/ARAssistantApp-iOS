@@ -2,15 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict/>
-    </array>
-
-    <key>NSCameraUsageDescription</key>
-    <string>This app needs camera access for AR streaming</string>
-
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>This app needs network access to stream camera data</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict/>
+	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We use your microphone for real-time audio communication.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access for AR streaming</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs network access to stream camera data</string>
 </dict>
 </plist>

@@ -1,3 +1,4 @@
+
 import Foundation
 import UIKit
 import simd
@@ -84,13 +85,6 @@ struct DrawingMessage: Codable {
     }
 }
 
-// 3D drawing anchor data
-struct Drawing3DAnchor {
-    let id: String
-    let worldTransform: simd_float4x4
-    let stroke: DrawingStroke
-}
-
 // Drawing tool configuration
 struct DrawingTool {
     var color: UIColor = .systemBlue
@@ -103,5 +97,8 @@ struct DrawingTool {
         .white, .black
     ]
     
-    static let thicknesses: [Float] = [0.002, 0.005, 0.01, 0.02]
+    static let thicknesses: [Float] = [0.004, 0.008, 0.012, 0.016]  // Increased for better long-distance visibility
 }
+
+
+
