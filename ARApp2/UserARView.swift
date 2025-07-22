@@ -1,4 +1,3 @@
-
 import SwiftUI
 import ARKit
 
@@ -102,36 +101,52 @@ struct UserARView: View {
         socketManager.onDrawingReceived = { [weak drawingManager] message in
             guard let drawingManager = drawingManager else { return }
             
-            switch message.action {
-            case .add:
-                if let stroke = message.stroke, !stroke.points.isEmpty {
-                    let centerX = stroke.points.map { $0.x }.reduce(0, +) / Float(stroke.points.count)
-                    let centerY = stroke.points.map { $0.y }.reduce(0, +) / Float(stroke.points.count)
-                    let centerPoint = CGPoint(x: CGFloat(centerX), y: CGFloat(centerY))
-                    
-                    if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
-                        drawingManager.addDrawing(anchor)
+            DispatchQueue.main.async {
+                switch message.action {
+                case .add:
+                    if let stroke = message.stroke, !stroke.points.isEmpty {
+                        var sumX: Float = 0
+                        var sumY: Float = 0
+                        for point in stroke.points {
+                            sumX += point.x
+                            sumY += point.y
+                        }
+                        let avgX = sumX / Float(stroke.points.count)
+                        let avgY = sumY / Float(stroke.points.count)
+                        let centerPoint = CGPoint(x: CGFloat(avgX), y: CGFloat(avgY))
+                        
+                        if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
+                            drawingManager.addDrawing(anchor)
+                        }
                     }
-                }
-                
-            case .update:
-                if let stroke = message.stroke, !stroke.points.isEmpty {
-                    let centerX = stroke.points.map { $0.x }.reduce(0, +) / Float(stroke.points.count)
-                    let centerY = stroke.points.map { $0.y }.reduce(0, +) / Float(stroke.points.count)
-                    let centerPoint = CGPoint(x: CGFloat(centerX), y: CGFloat(centerY))
                     
-                    if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
-                        drawingManager.updateDrawing(anchor)
+                case .update:
+                    if let stroke = message.stroke, !stroke.points.isEmpty {
+                        var sumX: Float = 0
+                        var sumY: Float = 0
+                        for point in stroke.points {
+                            sumX += point.x
+                            sumY += point.y
+                        }
+                        let avgX = sumX / Float(stroke.points.count)
+                        let avgY = sumY / Float(stroke.points.count)
+                        let centerPoint = CGPoint(x: CGFloat(avgX), y: CGFloat(avgY))
+                        
+                        if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
+                            drawingManager.updateDrawing(anchor)
+                        }
                     }
+                    
+                case .remove:
+                    drawingManager.removeDrawing(withId: message.drawingId)
                 }
-                
-            case .remove:
-                drawingManager.removeDrawing(withId: message.drawingId)
             }
         }
         
         socketManager.onClearDrawings = { [weak drawingManager] in
-            drawingManager?.clearAllDrawings()
+            DispatchQueue.main.async {
+                drawingManager?.clearAllDrawings()
+            }
         }
     }
     
@@ -153,10 +168,18 @@ struct ARViewContainer: UIViewRepresentable {
         
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
+        configuration.isLightEstimationEnabled = true
+        configuration.worldAlignment = .gravity
+        configuration.isAutoFocusEnabled = true
+        
         arView.session.run(configuration)
         
         arView.autoenablesDefaultLighting = true
         arView.automaticallyUpdatesLighting = true
+        arView.scene.lightingEnvironment.intensity = 1.0
+        
+        arView.rendersContinuously = true
+        arView.preferredFramesPerSecond = 60
         
         drawingManager.configure(with: arView)
         
@@ -197,7 +220,8 @@ struct ARViewContainer: UIViewRepresentable {
             
             let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x),
                                 height: CGFloat(planeAnchor.extent.z))
-            plane.firstMaterial?.diffuse.contents = UIColor.white.withAlphaComponent(0.1)
+            plane.firstMaterial?.diffuse.contents = UIColor.white.withAlphaComponent(0.05)
+            plane.firstMaterial?.isDoubleSided = true
             
             let planeNode = SCNNode(geometry: plane)
             planeNode.simdPosition = simd_float3(planeAnchor.center.x, 0, planeAnchor.center.z)
@@ -230,16 +254,3 @@ struct StreamButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

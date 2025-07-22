@@ -1,4 +1,3 @@
-// ARapp2
 const WebSocket = require('ws');
 const http = require('http');
 
@@ -18,7 +17,11 @@ class Client {
 
     send(data) {
         if (this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(data, { binary: true });
+            try {
+                this.ws.send(data, { binary: true });
+            } catch (error) {
+                console.error(`Error sending to client ${this.id}:`, error);
+            }
         }
     }
 
@@ -77,8 +80,11 @@ wss.on('connection', (ws) => {
                     break;
 
                 case 'clear_drawings':
-                    broadcastToRole('user', message);
-                    console.log('Clear drawings command sent');
+                    const clearMessage = JSON.stringify({ type: 'clear_drawings' });
+                    clients.forEach((c) => {
+                        c.send(clearMessage);
+                    });
+                    console.log('Clear drawings command sent to all clients');
                     break;
 
                 case 'audio_command':
@@ -96,6 +102,13 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
         console.log('Connection closed');
         if (client) {
+            if (client.audioActive) {
+                const targetRole = client.role === 'user' ? 'aid' : 'user';
+                broadcastToRole(targetRole, JSON.stringify({
+                    type: 'audio_command',
+                    command: 'audio_end'
+                }));
+            }
             clients.delete(ws);
             broadcastStatus();
         }
@@ -116,9 +129,11 @@ function handleAudioData(sender, audioData) {
         audioData
     ]);
     
+    let sentCount = 0;
     clients.forEach((client) => {
         if (client.role === targetRole && client.audioActive) {
             client.send(audioMessage);
+            sentCount++;
         }
     });
 }
@@ -156,7 +171,13 @@ function handleAudioCommand(sender, data) {
 function handleImageData(sender, imageData) {
     if (!sender || sender.role !== 'user') return;
     
-    broadcastToRole('aid', imageData);
+    let sentCount = 0;
+    clients.forEach((client) => {
+        if (client.role === 'aid') {
+            client.send(imageData);
+            sentCount++;
+        }
+    });
 }
 
 function handleDrawingMessage(sender, data) {
@@ -176,9 +197,11 @@ function isImageData(data) {
 }
 
 function broadcastToRole(role, data) {
+    let sentCount = 0;
     clients.forEach((client) => {
         if (client.role === role) {
             client.send(data);
+            sentCount++;
         }
     });
 }

@@ -1,13 +1,11 @@
-
 import Foundation
 import UIKit
 import simd
 
-// Drawing data structures
 struct DrawingPoint: Codable {
-    let x: Float  // Normalized screen coordinates (0-1)
-    let y: Float  // Normalized screen coordinates (0-1)
-    let force: Float  // Touch force for variable thickness
+    let x: Float
+    let y: Float
+    let force: Float
     let timestamp: TimeInterval
     
     init(normalizedPoint: CGPoint, force: Float = 1.0) {
@@ -20,7 +18,7 @@ struct DrawingPoint: Codable {
 
 struct DrawingStroke: Codable {
     let id: String
-    var points: [DrawingPoint]  // Changed to var for mutability
+    var points: [DrawingPoint]
     let color: CodableColor
     let thickness: Float
     let timestamp: TimeInterval
@@ -28,7 +26,7 @@ struct DrawingStroke: Codable {
     init(id: String = UUID().uuidString,
          points: [DrawingPoint] = [],
          color: UIColor = .systemBlue,
-         thickness: Float = 0.005) {
+         thickness: Float = 0.01) {
         self.id = id
         self.points = points
         self.color = CodableColor(color: color)
@@ -37,7 +35,6 @@ struct DrawingStroke: Codable {
     }
 }
 
-// Codable color for network transmission
 struct CodableColor: Codable {
     let red: Float
     let green: Float
@@ -63,7 +60,6 @@ struct CodableColor: Codable {
     }
 }
 
-// Drawing message for WebSocket transmission
 struct DrawingMessage: Codable {
     enum Action: String, Codable {
         case add = "add"
@@ -85,10 +81,9 @@ struct DrawingMessage: Codable {
     }
 }
 
-// Drawing tool configuration
 struct DrawingTool {
     var color: UIColor = .systemBlue
-    var thickness: Float = 0.005
+    var thickness: Float = 0.01
     var isEraser: Bool = false
     
     static let colors: [UIColor] = [
@@ -97,8 +92,5 @@ struct DrawingTool {
         .white, .black
     ]
     
-    static let thicknesses: [Float] = [0.004, 0.008, 0.012, 0.016]  // Increased for better long-distance visibility
+    static let thicknesses: [Float] = [0.008, 0.012, 0.016, 0.020]
 }
-
-
-

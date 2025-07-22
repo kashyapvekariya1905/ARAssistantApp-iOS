@@ -1,4 +1,3 @@
-
 import Foundation
 import UIKit
 
@@ -14,8 +13,8 @@ class SocketManager: ObservableObject {
     var onImageReceived: ((UIImage) -> Void)?
     var onDrawingReceived: ((DrawingMessage) -> Void)?
     var onClearDrawings: (() -> Void)?
-    var onAudioReceived: ((Data) -> Void)? //
-    var onAudioCommandReceived: ((AudioCommand) -> Void)? // 
+    var onAudioReceived: ((Data) -> Void)?
+    var onAudioCommandReceived: ((AudioCommand) -> Void)?
 
     private init() {}
 
@@ -95,6 +94,8 @@ class SocketManager: ObservableObject {
             webSocketTask?.send(message) { error in
                 if let error = error {
                     print("Send clear error: \(error)")
+                } else {
+                    print("Clear drawings sent successfully")
                 }
             }
         }
@@ -163,6 +164,11 @@ class SocketManager: ObservableObject {
             return
         }
 
+        if let text = String(data: data, encoding: .utf8) {
+            handleReceivedText(text)
+            return
+        }
+
         if let drawingMessage = try? JSONDecoder().decode(DrawingMessage.self, from: data) {
             DispatchQueue.main.async {
                 self.onDrawingReceived?(drawingMessage)
@@ -202,6 +208,7 @@ class SocketManager: ObservableObject {
                 }
 
             case "clear_drawings":
+                print("Received clear drawings command")
                 DispatchQueue.main.async {
                     self.onClearDrawings?()
                 }
@@ -225,22 +232,3 @@ enum AudioCommand: String {
     case start = "audio_start"
     case end = "audio_end"
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

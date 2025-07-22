@@ -1,4 +1,3 @@
-
 import SwiftUI
 import SceneKit
 
@@ -42,7 +41,7 @@ struct AidDrawingView: View {
             
             if show3DPreview && (completedStrokes.count > 0 || (isDrawing && currentStroke != nil)) {
                 ZStack {
-                    Color.black.opacity(0.2)
+                    Color.black.opacity(0.1)
                         .allowsHitTesting(false)
                     
                     GeometryReader { geometry in
@@ -134,20 +133,6 @@ struct AidDrawingView: View {
                                     .clipShape(Circle())
                             }
                         }
-                        
-                        if !showDepthGuide {
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("Tips:")
-                                    .font(.system(size: 9, weight: .semibold))
-                                    .foregroundColor(.yellow)
-                                Text("• Larger brush = farther")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(.yellow.opacity(0.8))
-                                Text("• Center = near")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(.yellow.opacity(0.8))
-                            }
-                        }
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))
@@ -192,7 +177,7 @@ struct AidDrawingView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            setupImageReceiver()
+            setupReceivers()
             if !socketManager.isConnected {
                 socketManager.connect(as: "aid")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -209,16 +194,23 @@ struct AidDrawingView: View {
         }
     }
     
-    private func setupImageReceiver() {
-        socketManager.onImageReceived = { [self] image in
-            currentImage = image
-            frameCount += 1
+    private func setupReceivers() {
+        socketManager.onImageReceived = { image in
+            DispatchQueue.main.async {
+                self.currentImage = image
+                self.frameCount += 1
+            }
         }
-        
-        socketManager.onClearDrawings = { [self] in
-            completedStrokes.removeAll()
+
+        socketManager.onClearDrawings = {
+            DispatchQueue.main.async {
+                self.completedStrokes.removeAll()
+                self.currentStroke = nil
+                self.isDrawing = false
+            }
         }
     }
+
     
     private func sendDrawing(_ stroke: DrawingStroke) {
         let message = DrawingMessage(
@@ -230,7 +222,11 @@ struct AidDrawingView: View {
     }
     
     private func clearDrawings() {
-        completedStrokes.removeAll()
+        DispatchQueue.main.async {
+            self.completedStrokes.removeAll()
+            self.currentStroke = nil
+            self.isDrawing = false
+        }
         socketManager.sendClearDrawings()
     }
     
@@ -263,20 +259,6 @@ struct DepthGuideOverlay: View {
                     .font(.caption2)
                     .foregroundColor(.orange.opacity(0.5))
                     .position(x: geometry.size.width - 60, y: 60)
-                
-                ForEach(0..<4) { i in
-                    Path { path in
-                        let progress = CGFloat(i) / 3.0
-                        let inset = 40 + (geometry.size.width / 2 - 40) * progress
-                        
-                        path.move(to: CGPoint(x: inset, y: geometry.size.height / 2))
-                        path.addLine(to: CGPoint(x: geometry.size.width - inset, y: geometry.size.height / 2))
-                        
-                        path.move(to: CGPoint(x: geometry.size.width / 2, y: inset))
-                        path.addLine(to: CGPoint(x: geometry.size.width / 2, y: geometry.size.height - inset))
-                    }
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                }
             }
         }
     }
@@ -288,13 +270,6 @@ struct Drawing3DPreviewView: UIViewRepresentable {
     let viewSize: CGSize
     let backgroundImage: UIImage?
     
-    init(strokes: [DrawingStroke], currentStroke: DrawingStroke?, viewSize: CGSize, backgroundImage: UIImage? = nil) {
-        self.strokes = strokes
-        self.currentStroke = currentStroke
-        self.viewSize = viewSize
-        self.backgroundImage = backgroundImage
-    }
-    
     func makeUIView(context: Context) -> SCNView {
         let sceneView = SCNView()
         sceneView.backgroundColor = .clear
@@ -304,12 +279,8 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         
         let cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
-        
         cameraNode.camera?.usesOrthographicProjection = false
         cameraNode.camera?.fieldOfView = 60
-        cameraNode.camera?.zNear = 0.001
-        cameraNode.camera?.zFar = 1000
-        
         cameraNode.position = SCNVector3(0, 0, 1)
         cameraNode.look(at: SCNVector3(0, 0, 0), up: SCNVector3(0, 1, 0), localFront: SCNVector3(0, 0, -1))
         sceneView.scene?.rootNode.addChildNode(cameraNode)
@@ -318,16 +289,8 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         lightNode.light = SCNLight()
         lightNode.light?.type = .omni
         lightNode.light?.intensity = 1500
-        lightNode.light?.color = UIColor.white
         lightNode.position = SCNVector3(0, 0, 2)
         sceneView.scene?.rootNode.addChildNode(lightNode)
-        
-        let ambientLight = SCNNode()
-        ambientLight.light = SCNLight()
-        ambientLight.light?.type = .ambient
-        ambientLight.light?.intensity = 500
-        ambientLight.light?.color = UIColor(white: 0.9, alpha: 1.0)
-        sceneView.scene?.rootNode.addChildNode(ambientLight)
         
         return sceneView
     }
@@ -343,43 +306,35 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         }
         
         for stroke in allStrokes {
-            if let strokeNode = create3DStrokeWithPerspective(from: stroke, viewSize: viewSize) {
+            if let strokeNode = create3DStrokeSimplified(from: stroke, viewSize: viewSize) {
                 strokeNode.name = "stroke"
                 sceneView.scene?.rootNode.addChildNode(strokeNode)
             }
         }
     }
     
-    private func create3DStrokeWithPerspective(from stroke: DrawingStroke, viewSize: CGSize) -> SCNNode? {
+    private func create3DStrokeSimplified(from stroke: DrawingStroke, viewSize: CGSize) -> SCNNode? {
         guard stroke.points.count > 1 else { return nil }
         
         let strokeNode = SCNNode()
-        
-        let depth = estimateDepthFromDrawing(stroke: stroke)
+        let scale: Float = 1.0
         
         let points3D = stroke.points.map { point in
-            let x = (point.x - 0.5) * 2.0
-            let y = (0.5 - point.y) * 2.0 * Float(viewSize.height / viewSize.width)
-            
-            let perspectiveScale = depth
-            
-            return SCNVector3(
-                x: x * perspectiveScale,
-                y: y * perspectiveScale,
-                z: -depth
-            )
+            let x = (point.x - 0.5) * 2.0 * scale
+            let y = (0.5 - point.y) * 2.0 * scale * Float(viewSize.height / viewSize.width)
+            return SCNVector3(x: x, y: y, z: 0)
         }
         
-        let baseThickness = stroke.thickness * (1.0 + depth * 0.5)
+        let baseThickness = stroke.thickness * 3.0
         
         for i in 0..<(points3D.count - 1) {
             let start = points3D[i]
             let end = points3D[i + 1]
             
-            let segment = createPerspectiveTubeSegment(
+            let segment = createTubeSegment(
                 from: start,
                 to: end,
-                radius: CGFloat(baseThickness * 4.0),
+                radius: CGFloat(baseThickness),
                 color: stroke.color.uiColor
             )
             
@@ -387,14 +342,9 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         }
         
         for point in points3D {
-            let sphere = SCNSphere(radius: CGFloat(baseThickness * 4.0))
-            
+            let sphere = SCNSphere(radius: CGFloat(baseThickness))
             sphere.firstMaterial?.diffuse.contents = stroke.color.uiColor
-            sphere.firstMaterial?.lightingModel = .phong
-            sphere.firstMaterial?.specular.contents = UIColor.white
-            sphere.firstMaterial?.shininess = 0.8
-            sphere.firstMaterial?.emission.contents = stroke.color.uiColor
-            sphere.firstMaterial?.emission.intensity = 0.3
+            sphere.firstMaterial?.lightingModel = .constant
             
             let sphereNode = SCNNode(geometry: sphere)
             sphereNode.position = point
@@ -404,7 +354,7 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         return strokeNode
     }
     
-    private func createPerspectiveTubeSegment(from start: SCNVector3, to end: SCNVector3, radius: CGFloat, color: UIColor) -> SCNNode {
+    private func createTubeSegment(from start: SCNVector3, to end: SCNVector3, radius: CGFloat, color: UIColor) -> SCNNode {
         let distance = simd_distance(
             simd_float3(start.x, start.y, start.z),
             simd_float3(end.x, end.y, end.z)
@@ -413,14 +363,10 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         guard distance > 0 else { return SCNNode() }
         
         let cylinder = SCNCylinder(radius: radius, height: CGFloat(distance))
-        cylinder.radialSegmentCount = 12
+        cylinder.radialSegmentCount = 8
         
         cylinder.firstMaterial?.diffuse.contents = color
-        cylinder.firstMaterial?.lightingModel = .phong
-        cylinder.firstMaterial?.specular.contents = UIColor.white
-        cylinder.firstMaterial?.shininess = 0.8
-        cylinder.firstMaterial?.emission.contents = color
-        cylinder.firstMaterial?.emission.intensity = 0.3
+        cylinder.firstMaterial?.lightingModel = .constant
         
         let cylinderNode = SCNNode(geometry: cylinder)
         
@@ -447,28 +393,6 @@ struct Drawing3DPreviewView: UIViewRepresentable {
         
         return cylinderNode
     }
-    
-    private func estimateDepthFromDrawing(stroke: DrawingStroke) -> Float {
-        let minX = stroke.points.map { $0.x }.min() ?? 0
-        let maxX = stroke.points.map { $0.x }.max() ?? 1
-        let minY = stroke.points.map { $0.y }.min() ?? 0
-        let maxY = stroke.points.map { $0.y }.max() ?? 1
-        
-        let width = maxX - minX
-        let height = maxY - minY
-        let size = max(width, height)
-        
-        let centerX = (minX + maxX) / 2
-        let centerY = (minY + maxY) / 2
-        let distanceFromCenter = hypot(centerX - 0.5, centerY - 0.5) * 2
-        
-        let sizeDepth = 1.0 - size
-        let positionDepth = distanceFromCenter
-        
-        let depth = (sizeDepth * 0.7 + positionDepth * 0.3) * 2.0 + 0.5
-        
-        return depth
-    }
 }
 
 struct DrawingPreviewView: View {
@@ -493,10 +417,9 @@ struct DrawingPreviewView: View {
                         path.addLine(to: points[i])
                     }
                 }
-                .stroke(Color(stroke.color.uiColor), lineWidth: CGFloat(stroke.thickness * 1200))
+                .stroke(Color(stroke.color.uiColor), lineWidth: CGFloat(stroke.thickness * 1000))
                 .opacity(0.9)
                 .shadow(color: Color(stroke.color.uiColor).opacity(0.5), radius: 3, x: 0, y: 0)
-                .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
             }
         }
     }
@@ -696,25 +619,3 @@ struct DrawingToolbar: View {
         .cornerRadius(20)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
