@@ -1,3 +1,4 @@
+
 import SwiftUI
 import ARKit
 
@@ -7,82 +8,190 @@ struct UserARView: View {
     @StateObject private var drawingManager = DrawingManager()
     @StateObject private var audioManager = AudioManager.shared
     @StateObject private var audioSocketHandler = AudioSocketHandler.shared
+    @StateObject private var arFeedbackManager = ARFeedbackManager()
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var arView: ARSCNView?
     
     var body: some View {
         ZStack {
-            ARViewContainer(streamManager: streamManager, drawingManager: drawingManager)
-                .edgesIgnoringSafeArea(.all)
+            ARViewContainer(
+                streamManager: streamManager,
+                drawingManager: drawingManager,
+                arFeedbackManager: arFeedbackManager,
+                arView: $arView
+            )
+            .edgesIgnoringSafeArea(.all)
             
             VStack {
                 HStack {
                     Button(action: {
                         disconnect()
                     }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.7))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Circle().fill(Color.black.opacity(0.3)))
                     }
+                    .padding(.leading)
                     
                     Spacer()
                     
-                    VStack(alignment: .trailing) {
-                        Text(socketManager.connectionStatus)
-                            .font(.caption)
+                    VStack(alignment: .trailing, spacing: 4) {
                         if streamManager.isStreaming {
-                            Label("Streaming", systemImage: "dot.radiowaves.left.and.right")
+                            Label("Live", systemImage: "dot.radiowaves.left.and.right")
                                 .font(.caption)
-                                .foregroundColor(.green)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.red)
+                                .cornerRadius(4)
                         }
-                        if audioManager.isCallActive {
-                            Label("Call Active", systemImage: "phone.fill")
-                                .font(.caption)
-                                .foregroundColor(.blue)
+                        
+                        if arFeedbackManager.isFeedbackActive {
+                            Label("AR Active", systemImage: "viewfinder")
+                                .font(.caption2)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.purple.opacity(0.8))
+                                .cornerRadius(4)
                         }
                     }
-                    .padding()
-                    .background(Color.black.opacity(0.7))
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .padding(.trailing)
                 }
-                .padding()
+                .padding(.top, 50)
                 
                 Spacer()
                 
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
                     if audioManager.isCallActive {
-                        CallControlsView()
-                    }
-                    
-                    HStack {
-                        if !socketManager.isConnected {
-                            Button("Connect") {
-                                socketManager.connect(as: "user")
-                                setupDrawingReceiver()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                    audioSocketHandler.startAudioCall()
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: audioManager.isCallOnHold ? "pause.circle.fill" : "phone.fill")
+                                    .foregroundColor(audioManager.isCallOnHold ? .orange : .green)
+                                Text(audioManager.isCallOnHold ? "Call On Hold" : "Call Active")
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.black.opacity(0.6))
+                            .cornerRadius(20)
+                            
+                            HStack(spacing: 16) {
+                                Button(action: {
+                                    audioManager.toggleMic()
+                                }) {
+                                    VStack {
+                                        Image(systemName: audioManager.isMicMuted ? "mic.slash.fill" : "mic.fill")
+                                            .font(.system(size: 20))
+                                        Text(audioManager.isMicMuted ? "Unmute" : "Mute")
+                                            .font(.system(size: 10))
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.white)
+                                    .background(audioManager.isMicMuted ? Color.red : Color.gray.opacity(0.6))
+                                    .clipShape(Circle())
+                                }
+                                
+                                Button(action: {
+                                    audioManager.toggleHold()
+                                }) {
+                                    VStack {
+                                        Image(systemName: audioManager.isCallOnHold ? "play.fill" : "pause.fill")
+                                            .font(.system(size: 20))
+                                        Text(audioManager.isCallOnHold ? "Resume" : "Hold")
+                                            .font(.system(size: 10))
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.white)
+                                    .background(audioManager.isCallOnHold ? Color.orange : Color.gray.opacity(0.6))
+                                    .clipShape(Circle())
+                                }
+                                
+                                Button(action: {
+                                    audioSocketHandler.endAudioCall()
+                                }) {
+                                    VStack {
+                                        Image(systemName: "phone.down.fill")
+                                            .font(.system(size: 20))
+                                        Text("End")
+                                            .font(.system(size: 10))
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.white)
+                                    .background(Color.red)
+                                    .clipShape(Circle())
+                                }
+                                
+                                Button(action: {
+                                    audioManager.toggleSpeaker()
+                                }) {
+                                    VStack {
+                                        Image(systemName: audioManager.isSpeakerOn ? "speaker.wave.3.fill" : "speaker.fill")
+                                            .font(.system(size: 20))
+                                        Text("Speaker")
+                                            .font(.system(size: 10))
+                                    }
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.white)
+                                    .background(audioManager.isSpeakerOn ? Color.blue : Color.gray.opacity(0.6))
+                                    .clipShape(Circle())
                                 }
                             }
-                            .buttonStyle(StreamButtonStyle())
-                        } else if !streamManager.isStreaming {
-                            Button("Start Streaming") {
-                                streamManager.isStreaming = true
-                            }
-                            .buttonStyle(StreamButtonStyle(color: .green))
-                        } else {
-                            Button("Stop Streaming") {
-                                streamManager.stopStreaming()
-                            }
-                            .buttonStyle(StreamButtonStyle(color: .red))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.black.opacity(0.6))
+                            .cornerRadius(15)
                         }
                     }
+                    
+                    if !socketManager.isConnected {
+                        Button(action: {
+                            socketManager.connect(as: "user")
+                            setupDrawingReceiver()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                audioSocketHandler.startAudioCall()
+                            }
+                        }) {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                                .frame(width: 70, height: 70)
+                                .background(Circle().fill(Color.blue))
+                        }
+                    } else if !streamManager.isStreaming {
+                        Button(action: {
+                            streamManager.isStreaming = true
+                        }) {
+                            Image(systemName: "video")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                                .frame(width: 70, height: 70)
+                                .background(Circle().fill(Color.green))
+                        }
+                    } else {
+                        Button(action: {
+                            streamManager.stopStreaming()
+                        }) {
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                                .frame(width: 70, height: 70)
+                                .background(Circle().fill(Color.red))
+                        }
+                    }
+                    
+                    Text(socketManager.connectionStatus)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(12)
                 }
-                .padding()
+                .padding(.bottom, 40)
             }
         }
         .navigationBarHidden(true)
@@ -98,47 +207,29 @@ struct UserARView: View {
     }
     
     private func setupDrawingReceiver() {
-        socketManager.onDrawingReceived = { [weak drawingManager] message in
+        socketManager.onDrawingReceived = { [weak drawingManager, weak arFeedbackManager, weak arView] message in
             guard let drawingManager = drawingManager else { return }
             
             DispatchQueue.main.async {
                 switch message.action {
                 case .add:
-                    if let stroke = message.stroke, !stroke.points.isEmpty {
-                        var sumX: Float = 0
-                        var sumY: Float = 0
-                        for point in stroke.points {
-                            sumX += point.x
-                            sumY += point.y
-                        }
-                        let avgX = sumX / Float(stroke.points.count)
-                        let avgY = sumY / Float(stroke.points.count)
-                        let centerPoint = CGPoint(x: CGFloat(avgX), y: CGFloat(avgY))
-                        
-                        if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
-                            drawingManager.addDrawing(anchor)
+                    if let stroke = message.stroke {
+                        drawingManager.processIncomingStroke(stroke)
+                        if let arView = arView, !arFeedbackManager!.isFeedbackActive {
+                            arFeedbackManager!.startFeedback(from: arView)
                         }
                     }
                     
                 case .update:
-                    if let stroke = message.stroke, !stroke.points.isEmpty {
-                        var sumX: Float = 0
-                        var sumY: Float = 0
-                        for point in stroke.points {
-                            sumX += point.x
-                            sumY += point.y
-                        }
-                        let avgX = sumX / Float(stroke.points.count)
-                        let avgY = sumY / Float(stroke.points.count)
-                        let centerPoint = CGPoint(x: CGFloat(avgX), y: CGFloat(avgY))
-                        
-                        if let anchor = drawingManager.createDrawing3D(from: stroke, at: centerPoint) {
-                            drawingManager.updateDrawing(anchor)
-                        }
+                    if let stroke = message.stroke {
+                        drawingManager.processIncomingStroke(stroke)
                     }
                     
                 case .remove:
                     drawingManager.removeDrawing(withId: message.drawingId)
+                    
+                case .render3D:
+                    break
                 }
             }
         }
@@ -151,6 +242,7 @@ struct UserARView: View {
     }
     
     private func disconnect() {
+        arFeedbackManager.stopFeedback()
         audioSocketHandler.endAudioCall()
         streamManager.stopStreaming()
         socketManager.disconnect()
@@ -162,9 +254,11 @@ struct UserARView: View {
 struct ARViewContainer: UIViewRepresentable {
     @ObservedObject var streamManager: CameraStreamManager
     @ObservedObject var drawingManager: DrawingManager
+    @ObservedObject var arFeedbackManager: ARFeedbackManager
+    @Binding var arView: ARSCNView?
     
     func makeUIView(context: Context) -> ARSCNView {
-        let arView = ARSCNView()
+        let arSceneView = ARSCNView()
         
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
@@ -172,20 +266,32 @@ struct ARViewContainer: UIViewRepresentable {
         configuration.worldAlignment = .gravity
         configuration.isAutoFocusEnabled = true
         
-        arView.session.run(configuration)
+        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+            configuration.sceneReconstruction = .mesh
+        }
         
-        arView.autoenablesDefaultLighting = true
-        arView.automaticallyUpdatesLighting = true
-        arView.scene.lightingEnvironment.intensity = 1.0
+        arSceneView.session.run(configuration)
         
-        arView.rendersContinuously = true
-        arView.preferredFramesPerSecond = 60
+        arSceneView.autoenablesDefaultLighting = true
+        arSceneView.automaticallyUpdatesLighting = true
+        arSceneView.scene.lightingEnvironment.intensity = 1.0
         
-        drawingManager.configure(with: arView)
+        arSceneView.rendersContinuously = true
+        arSceneView.preferredFramesPerSecond = 60
+        arSceneView.contentScaleFactor = UIScreen.main.nativeScale
         
-        arView.delegate = context.coordinator
+        arSceneView.contentMode = .scaleAspectFill
+        arSceneView.clipsToBounds = true
         
-        return arView
+        drawingManager.configure(with: arSceneView)
+        
+        arSceneView.delegate = context.coordinator
+        
+        DispatchQueue.main.async {
+            self.arView = arSceneView
+        }
+        
+        return arSceneView
     }
     
     func updateUIView(_ uiView: ARSCNView, context: Context) {
@@ -216,18 +322,18 @@ struct ARViewContainer: UIViewRepresentable {
         }
         
         func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-            guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
-            
-            let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x),
-                                height: CGFloat(planeAnchor.extent.z))
-            plane.firstMaterial?.diffuse.contents = UIColor.white.withAlphaComponent(0.05)
-            plane.firstMaterial?.isDoubleSided = true
-            
-            let planeNode = SCNNode(geometry: plane)
-            planeNode.simdPosition = simd_float3(planeAnchor.center.x, 0, planeAnchor.center.z)
-            planeNode.eulerAngles.x = -.pi / 2
-            
-            node.addChildNode(planeNode)
+            if let planeAnchor = anchor as? ARPlaneAnchor {
+                let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x),
+                                    height: CGFloat(planeAnchor.extent.z))
+                plane.firstMaterial?.diffuse.contents = UIColor.white.withAlphaComponent(0.05)
+                plane.firstMaterial?.isDoubleSided = true
+                
+                let planeNode = SCNNode(geometry: plane)
+                planeNode.simdPosition = simd_float3(planeAnchor.center.x, 0, planeAnchor.center.z)
+                planeNode.eulerAngles.x = -.pi / 2
+                
+                node.addChildNode(planeNode)
+            }
         }
         
         func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
@@ -242,15 +348,53 @@ struct ARViewContainer: UIViewRepresentable {
     }
 }
 
-struct StreamButtonStyle: ButtonStyle {
-    var color: Color = .blue
+class ARFeedbackManager: ObservableObject {
+    @Published var isFeedbackActive = false
+    private var feedbackTimer: Timer?
+    private let feedbackFPS: Double = 15.0
+    private var lastFeedbackTime: TimeInterval = 0
     
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding()
-            .background(color)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    func startFeedback(from arView: ARSCNView) {
+        guard !isFeedbackActive else { return }
+        
+        DispatchQueue.main.async {
+            self.isFeedbackActive = true
+            self.feedbackTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / self.feedbackFPS, repeats: true) { [weak self] _ in
+                self?.captureFeedback(from: arView)
+            }
+        }
+    }
+    
+    func stopFeedback() {
+        DispatchQueue.main.async {
+            self.isFeedbackActive = false
+            self.feedbackTimer?.invalidate()
+            self.feedbackTimer = nil
+        }
+    }
+    
+    private func captureFeedback(from arView: ARSCNView) {
+        let currentTime = CACurrentMediaTime()
+        if currentTime - lastFeedbackTime < (1.0 / feedbackFPS) {
+            return
+        }
+        lastFeedbackTime = currentTime
+        
+        DispatchQueue.main.async {
+            let renderer = UIGraphicsImageRenderer(size: arView.bounds.size)
+            let image = renderer.image { context in
+                arView.drawHierarchy(in: arView.bounds, afterScreenUpdates: false)
+            }
+            
+            if let resizedImage = image.resized(toWidth: 640),
+               let imageData = resizedImage.jpegData(compressionQuality: 0.4) {
+                
+                var feedbackData = Data()
+                feedbackData.append(contentsOf: "FEEDBACK:".utf8)
+                feedbackData.append(imageData)
+                
+                SocketManager.shared.sendFeedbackData(feedbackData)
+            }
+        }
     }
 }

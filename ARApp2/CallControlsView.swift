@@ -59,19 +59,3 @@ struct CallControlsView: View {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

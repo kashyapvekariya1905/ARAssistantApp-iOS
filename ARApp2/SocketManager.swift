@@ -1,3 +1,4 @@
+
 import Foundation
 import UIKit
 
@@ -15,11 +16,14 @@ class SocketManager: ObservableObject {
     var onClearDrawings: (() -> Void)?
     var onAudioReceived: ((Data) -> Void)?
     var onAudioCommandReceived: ((AudioCommand) -> Void)?
+    var onFeedbackReceived: ((UIImage) -> Void)?
 
     private init() {}
 
     func connect(as role: String, id: String = UUID().uuidString) {
         guard let url = URL(string: "ws://192.168.10.179:3000") else { return }
+//        guard let url = URL(string: "ws://172.26.102.151:3000") else { return }
+        
 
         webSocketTask = session.webSocketTask(with: url)
         webSocketTask?.resume()
@@ -130,6 +134,17 @@ class SocketManager: ObservableObject {
             }
         }
     }
+    
+    func sendFeedbackData(_ feedbackData: Data) {
+        guard isConnected else { return }
+
+        let message = URLSessionWebSocketTask.Message.data(feedbackData)
+        webSocketTask?.send(message) { error in
+            if let error = error {
+                print("Send feedback error: \(error)")
+            }
+        }
+    }
 
     private func receiveMessage() {
         webSocketTask?.receive { [weak self] result in
@@ -163,9 +178,14 @@ class SocketManager: ObservableObject {
             }
             return
         }
-
-        if let text = String(data: data, encoding: .utf8) {
-            handleReceivedText(text)
+        
+        if let feedbackPrefix = "FEEDBACK:".data(using: .utf8), data.starts(with: feedbackPrefix) {
+            let imageData = data.dropFirst(feedbackPrefix.count)
+            if let image = UIImage(data: imageData) {
+                DispatchQueue.main.async {
+                    self.onFeedbackReceived?(image)
+                }
+            }
             return
         }
 
@@ -175,11 +195,30 @@ class SocketManager: ObservableObject {
             }
             return
         }
+        
+        if let text = String(data: data, encoding: .utf8) {
+            handleReceivedText(text)
+            return
+        }
 
         if let image = UIImage(data: data) {
             DispatchQueue.main.async {
                 self.onImageReceived?(image)
             }
+        }
+    }
+    func sendRawData(_ data: Data) {
+        guard isConnected else { return }
+        webSocketTask?.send(.data(data)) { error in
+            if let error = error {
+                print("WebSocket send error: \(error)")
+            }
+        }
+    }
+
+    func sendChunkedMessage(_ message: [String: Any]) {
+        if let jsonData = try? JSONSerialization.data(withJSONObject: message) {
+            sendRawData(jsonData)
         }
     }
 
@@ -232,3 +271,5 @@ enum AudioCommand: String {
     case start = "audio_start"
     case end = "audio_end"
 }
+
+
