@@ -24,7 +24,7 @@ An iOS application that enables real-time remote collaboration using Augmented R
 
 **Option A - Clone the repository:**
 ```bash
-git clone [[YOUR_GIT_REPOSITORY_URL]](https://github.com/kashyapvekariya1905/ARAssistantApp-iOS)
+git clone https://github.com/kashyapvekariya1905/ARAssistantApp-iOS
 cd AR-Remote-Assistance
 ```
 
