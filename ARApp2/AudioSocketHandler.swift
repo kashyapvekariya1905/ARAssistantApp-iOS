@@ -47,4 +47,3 @@ class AudioSocketHandler: ObservableObject {
         socketManager.sendAudioData(data)
     }
 }
-

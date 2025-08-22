@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AF4955F02E3291DB00C1AFE4 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = AF4955EF2E3291DB00C1AFE4 /* WebRTC */; };
+		AF495F2A2E2E8028007920B9 /* VideoSubscriberAccount.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF495F282E2E8028007920B9 /* VideoSubscriberAccount.framework */; };
+		AF495F2B2E2E8028007920B9 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF495F292E2E8028007920B9 /* VideoToolbox.framework */; };
+		AF495F2D2E2E8036007920B9 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF495F2C2E2E8036007920B9 /* Accelerate.framework */; };
+		AF915BBA2E2AB080008F0ED3 /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF915BB92E2AB080008F0ED3 /* AVFAudio.framework */; };
+		AF915BBE2E2AB0B9008F0ED3 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF915BBB2E2AB0B9008F0ED3 /* CoreAudio.framework */; };
+		AF915BBF2E2AB0B9008F0ED3 /* CoreAudioKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF915BBC2E2AB0B9008F0ED3 /* CoreAudioKit.framework */; };
 		AFC318752E22B15300ED9368 /* ARKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFC318742E22B15300ED9368 /* ARKit.framework */; platformFilters = (ios, xros, ); };
 		AFC318772E22B15900ED9368 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFC318762E22B15900ED9368 /* AVFoundation.framework */; };
 		AFC318792E22B16100ED9368 /* Combine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFC318782E22B16100ED9368 /* Combine.framework */; };
@@ -29,7 +36,27 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		AFA5A99B2E3054A5006729E5 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		AF495F282E2E8028007920B9 /* VideoSubscriberAccount.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoSubscriberAccount.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/VideoSubscriberAccount.framework; sourceTree = DEVELOPER_DIR; };
+		AF495F292E2E8028007920B9 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/VideoToolbox.framework; sourceTree = DEVELOPER_DIR; };
+		AF495F2C2E2E8036007920B9 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/Accelerate.framework; sourceTree = DEVELOPER_DIR; };
+		AF915BB92E2AB080008F0ED3 /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/AVFAudio.framework; sourceTree = DEVELOPER_DIR; };
+		AF915BBB2E2AB0B9008F0ED3 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
+		AF915BBC2E2AB0B9008F0ED3 /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudioKit.framework; sourceTree = DEVELOPER_DIR; };
+		AF915BBD2E2AB0B9008F0ED3 /* CoreAudioTypes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioTypes.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudioTypes.framework; sourceTree = DEVELOPER_DIR; };
 		AFC3183E2E22AE6C00ED9368 /* ARApp2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ARApp2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFC3184C2E22AE6E00ED9368 /* ARApp2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ARApp2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFC318562E22AE6E00ED9368 /* ARApp2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ARApp2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -39,9 +66,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AFC318722E22B11700ED9368 /* Exceptions for "ARApp2" folder in "ARApp2" target */ = {
+		AF495F5B2E2E88CE007920B9 /* Exceptions for "ARApp2" folder in "ARApp2" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Assets.xcassets,
 				Info.plist,
 			);
 			target = AFC3183D2E22AE6C00ED9368 /* ARApp2 */;
@@ -52,7 +80,7 @@
 		AFC318402E22AE6D00ED9368 /* ARApp2 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AFC318722E22B11700ED9368 /* Exceptions for "ARApp2" folder in "ARApp2" target */,
+				AF495F5B2E2E88CE007920B9 /* Exceptions for "ARApp2" folder in "ARApp2" target */,
 			);
 			path = ARApp2;
 			sourceTree = "<group>";
@@ -74,8 +102,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF495F2B2E2E8028007920B9 /* VideoToolbox.framework in Frameworks */,
+				AF495F2A2E2E8028007920B9 /* VideoSubscriberAccount.framework in Frameworks */,
 				AFC318772E22B15900ED9368 /* AVFoundation.framework in Frameworks */,
+				AF915BBF2E2AB0B9008F0ED3 /* CoreAudioKit.framework in Frameworks */,
+				AF915BBA2E2AB080008F0ED3 /* AVFAudio.framework in Frameworks */,
+				AF4955F02E3291DB00C1AFE4 /* WebRTC in Frameworks */,
 				AFC318792E22B16100ED9368 /* Combine.framework in Frameworks */,
+				AF495F2D2E2E8036007920B9 /* Accelerate.framework in Frameworks */,
+				AF915BBE2E2AB0B9008F0ED3 /* CoreAudio.framework in Frameworks */,
 				AFC318752E22B15300ED9368 /* ARKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -121,6 +156,13 @@
 		AFC318732E22B15300ED9368 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AF495F2C2E2E8036007920B9 /* Accelerate.framework */,
+				AF495F282E2E8028007920B9 /* VideoSubscriberAccount.framework */,
+				AF495F292E2E8028007920B9 /* VideoToolbox.framework */,
+				AF915BBB2E2AB0B9008F0ED3 /* CoreAudio.framework */,
+				AF915BBC2E2AB0B9008F0ED3 /* CoreAudioKit.framework */,
+				AF915BBD2E2AB0B9008F0ED3 /* CoreAudioTypes.framework */,
+				AF915BB92E2AB080008F0ED3 /* AVFAudio.framework */,
 				AFC318782E22B16100ED9368 /* Combine.framework */,
 				AFC318762E22B15900ED9368 /* AVFoundation.framework */,
 				AFC318742E22B15300ED9368 /* ARKit.framework */,
@@ -138,6 +180,7 @@
 				AFC3183A2E22AE6C00ED9368 /* Sources */,
 				AFC3183B2E22AE6C00ED9368 /* Frameworks */,
 				AFC3183C2E22AE6C00ED9368 /* Resources */,
+				AFA5A99B2E3054A5006729E5 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -147,8 +190,6 @@
 				AFC318402E22AE6D00ED9368 /* ARApp2 */,
 			);
 			name = ARApp2;
-			packageProductDependencies = (
-			);
 			productName = ARApp2;
 			productReference = AFC3183E2E22AE6C00ED9368 /* ARApp2.app */;
 			productType = "com.apple.product-type.application";
@@ -170,8 +211,6 @@
 				AFC3184F2E22AE6E00ED9368 /* ARApp2Tests */,
 			);
 			name = ARApp2Tests;
-			packageProductDependencies = (
-			);
 			productName = ARApp2Tests;
 			productReference = AFC3184C2E22AE6E00ED9368 /* ARApp2Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -193,8 +232,6 @@
 				AFC318592E22AE6E00ED9368 /* ARApp2UITests */,
 			);
 			name = ARApp2UITests;
-			packageProductDependencies = (
-			);
 			productName = ARApp2UITests;
 			productReference = AFC318562E22AE6E00ED9368 /* ARApp2UITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -231,6 +268,10 @@
 			);
 			mainGroup = AFC318352E22AE6C00ED9368;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AF4955EE2E3291DB00C1AFE4 /* XCRemoteSwiftPackageReference "WebRTC" */,
+				AFCABBAC2E36081500562406 /* XCRemoteSwiftPackageReference "socket" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AFC3183F2E22AE6C00ED9368 /* Products */;
 			projectDirPath = "";
@@ -341,6 +382,8 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = U3CU9XKJ3M;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -403,7 +446,9 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = U3CU9XKJ3M;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -426,14 +471,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ARApp2/ARApp2.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = U3CU9XKJ3M;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ARApp2/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs camera access for AR streaming";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs network access to stream camera data";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone for real-time audio communication.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -442,9 +494,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
@@ -466,14 +517,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ARApp2/ARApp2.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = U3CU9XKJ3M;
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ARApp2/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs camera access for AR streaming";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs network access to stream camera data";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone for real-time audio communication.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -482,9 +540,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
@@ -631,6 +688,33 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AF4955EE2E3291DB00C1AFE4 /* XCRemoteSwiftPackageReference "WebRTC" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stasel/WebRTC";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 138.0.0;
+			};
+		};
+		AFCABBAC2E36081500562406 /* XCRemoteSwiftPackageReference "socket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AF4955EF2E3291DB00C1AFE4 /* WebRTC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF4955EE2E3291DB00C1AFE4 /* XCRemoteSwiftPackageReference "WebRTC" */;
+			productName = WebRTC;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AFC318362E22AE6C00ED9368 /* Project object */;
 }

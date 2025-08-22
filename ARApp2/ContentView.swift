@@ -1,3 +1,6 @@
+// MARK: Main file
+// UI for homepage
+
 import SwiftUI
 import ARKit
 import SceneKit
@@ -43,6 +46,8 @@ struct ContentView: View {
     }
 }
 
+
+// Rolse selection part of the app
 struct RoleSelectionCard: View {
     let title: String
     let subtitle: String
