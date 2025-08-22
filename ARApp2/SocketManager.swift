@@ -21,8 +21,8 @@
 //    private init() {}
 //
 //    func connect(as role: String, id: String = UUID().uuidString) {
-//        guard let url = URL(string: "ws://192.168.10.179:3000") else { return }
-////        guard let url = URL(string: "ws://172.26.102.151:3000") else { return }
+//        guard let url = URL(string: "ws://localhost:3000") else { return }
+////        guard let url = URL(string: "ws://localhost:3000") else { return }
 //        
 //
 //        webSocketTask = session.webSocketTask(with: url)
@@ -329,8 +329,8 @@ class SocketManager: ObservableObject {
     ///   - id: Unique identifier for this client (generates UUID if not provided)
     func connect(as role: String, id: String = UUID().uuidString) {
         // WebSocket server URL - currently set to local network address
-        guard let url = URL(string: "ws://192.168.10.179:3000") else { return }
-//        guard let url = URL(string: "ws://172.26.102.151:3000") else { return }
+        guard let url = URL(string: "ws://localhost:3000") else { return }
+//        guard let url = URL(string: "ws://localhost:3000") else { return }
         
         // Create and start WebSocket connection
         webSocketTask = session.webSocketTask(with: url)
